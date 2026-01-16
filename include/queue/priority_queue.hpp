@@ -4,6 +4,7 @@
 #include "types.hpp"
 
 #include <atomic>
+#include <condition_variable>
 #include <limits>
 #include <map>
 #include <memory>
@@ -15,14 +16,19 @@
 namespace dispatcher::queue {
 
 class PriorityQueue {
-    // здесь ваш код
-public:
-    // explicit PriorityQueue(?);
+private:
+    std::map<TaskPriority, std::unique_ptr<IQueue>> queues_;
+    std::mutex mtx_;
+    std::condition_variable cv_;
+    std::atomic<bool> shutdown_{false};
 
-    void push(TaskPriority priority, std::function<void()> task);
+public:
+    explicit PriorityQueue(const std::map<TaskPriority, QueueOptions> &options);
+
+    void push(TaskPriority priority, Task task);
     // block on pop until shutdown is called
     // after that return std::nullopt on empty queue
-    std::optional<std::function<void()>> pop();
+    std::optional<Task> pop();
 
     void shutdown();
 
